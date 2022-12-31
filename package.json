@@ -1,0 +1,17 @@
+{
+  "name": "turbo",
+  "version": "1.0.0",
+  "description": "A straight to the point, highly customizable boost rewards bot!",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Orius",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^14.7.1",
+    "dotenv": "^16.0.3",
+    "sequelize": "^6.28.0",
+    "sqlite3": "^5.1.4"
+  }
+}
