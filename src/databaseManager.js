@@ -49,12 +49,17 @@ const ServerSettings = sequelize.define('serverSettings', {
     allowNull: false,
     unique: true
   },
+  colors_setting: {
+    type: Sequelize.NUMBER,
+    allowNull: false,
+    defaultValue: 0
+  },
   icons_setting: {
     type: Sequelize.NUMBER,
     allowNull: false,
     defaultValue: 0
   },
-  colors_setting: {
+  name_setting: {
     type: Sequelize.NUMBER,
     allowNull: false,
     defaultValue: 0
@@ -64,20 +69,20 @@ const ServerSettings = sequelize.define('serverSettings', {
     allowNull: false,
     defaultValue: false
   },
-  icons_options: {
-    type: Sequelize.STRING,
-    allowNull: false,
-    defaultValue: '{"None":"NONE"}'
-  },
   colors_options: {
     type: Sequelize.STRING,
     allowNull: false,
     defaultValue: '{"None":"#000000"}'
   },
-  approval_setting: {
-    type: Sequelize.NUMBER,
+  icons_options: {
+    type: Sequelize.STRING,
     allowNull: false,
-    defaultValue: 0
+    defaultValue: '{"None":"NONE"}'
+  },
+  name_options: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    defaultValue: '{"Default":"Personal Role"}'
   },
   approval_channel: {
     type: Sequelize.STRING,
@@ -85,6 +90,39 @@ const ServerSettings = sequelize.define('serverSettings', {
     defaultValue: ""
   }
 });
+
+
+
+/* define classes */
+class ServerOptions {
+  /**
+   * 
+   * @param {string} serverId 
+   * @param {number} colorsSetting 
+   * @param {number} iconsSetting 
+   * @param {number} nameSetting 
+   * @param {boolean} alphanumericOnly 
+   * @param {object} colorsOptions 
+   * @param {object} iconsOptions 
+   * @param {object} nameOptions 
+   * @param {string} approvalChannel 
+   */
+  constructor(serverId, colorsSetting, iconsSetting, nameSetting, alphanumericOnly, colorsOptions, iconsOptions, nameOptions, approvalChannel) {
+    this.serverId = serverId ?? "";
+    this.colorsSetting = colorsSetting ?? 0;
+    this.iconsSetting = iconsSetting ?? 0;
+    this.nameSetting = nameSetting ?? 0;
+    this.alphanumericOnly = alphanumericOnly ?? 0;
+    this.colorsOptions = colorsOptions ?? { "None": "#000000" };
+    this.iconsOptions = iconsOptions ?? { "None": "NONE" };
+    this.nameOptions = nameOptions ?? { "Default": "Personal Role" };
+    this.approvalChannel = approvalChannel ?? "";
+  }
+}
+
+
+
+/* define functions */
 
 /**
  * @param {Discord.Guild} guild 
@@ -229,4 +267,64 @@ function setCustomRoleData(client, customRole, guildId, userId) {
   });
 }
 
-module.exports = { CustomRoles, Roles, ServerSettings, sequelize, getCustomRoleData, setCustomRoleData };
+/**
+ * @param {string} guildId 
+ * @returns {Promise<ServerOptions>}
+ */
+function getServerSettings(guildId) {
+  return new Promise((resolve, reject) => {
+    ServerSettings.findOne({
+      where: {
+        id: guildId
+      }
+    }).then(settings => {
+      if (!settings) {
+        return reject();
+      }
+      return resolve(new ServerOptions(
+        guildId, 
+        settings.colors_setting, 
+        settings.icons_setting, 
+        settings.name_setting, 
+        settings.alphanumeric_only, 
+        JSON.parse(settings.colors_options),
+        JSON.parse(settings.icons_options),
+        JSON.parse(settings.name_options),
+        settings.approval_channel
+      ));
+    }).catch((err) => {
+      const options = new ServerOptions(guildId);
+      setServerSettings(guildId, options).then(() => {
+        return resolve(options);
+      }).catch((err) => {
+        return reject(err);
+      });
+    });
+  });
+}
+
+/**
+ * @param {string} guildId 
+ * @param {ServerOptions} settings 
+ */
+function setServerSettings(guildId, settings) {
+  return new Promise((resolve, reject) => {
+    ServerSettings.upsert({
+      id: guildId,
+      colors_setting: settings.colorsSetting,
+      icons_setting: settings.iconsSetting,
+      name_setting: settings.nameSetting,
+      alphanumeric_only: settings.alphanumericOnly,
+      colors_options: JSON.stringify(settings.colorsOptions),
+      icons_options: JSON.stringify(settings.iconsOptions),
+      name_options: JSON.stringify(settings.nameOptions),
+      approval_channel: settings.approvalChannel
+    }).then(() => {
+      return resolve();
+    }).catch((err) => {
+      return reject();
+    });
+  });
+}
+
+module.exports = { CustomRoles, Roles, ServerSettings, sequelize, getCustomRoleData, setCustomRoleData, getServerSettings, setServerSettings };

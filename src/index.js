@@ -25,7 +25,7 @@ client.on('ready', () => {
   sequelize.sync();
   CustomRoles.sync();
   Roles.sync();
-  ServerSettings.sync();
+  ServerSettings.sync({ force: true });
 });
 
 fs.readdirSync(path.join(__dirname, "./events")).forEach(file => {
