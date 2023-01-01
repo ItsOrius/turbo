@@ -14,13 +14,17 @@ const data = new Discord.SlashCommandBuilder()
  * @param {Discord.CommandInteraction} interaction 
  */
 function execute(client, interaction) {
-  const name = interaction.options.getString('name');
-  const color = interaction.options.getString('color');
-  const icon = interaction.options.getString('icon');
+  let name = interaction.options.getString('name');
+  let color = interaction.options.getString('color');
+  let icon = interaction.options.getString('icon');
   if (!interaction.member.premiumSince) return interaction.reply({ content: 'You must be a server booster to use this command!', ephemeral: true });
   if (!/^#[0-9A-Fa-f]{6}$/i.test(color)) return interaction.reply({ content: 'Invalid color!', ephemeral: true });
   if (icon.toLowerCase() == 'none') icon = "";
   getCustomRoleData(interaction.guildId, interaction.user.id).then(customRole => {
+    const role = interaction.guild.roles.cache.get(customRole.id);
+    if (!name) name = role.name ?? "new role";
+    if (!color) color = role.color ?? "#000000";
+    if (!icon) icon = role.icon ?? "";
     setCustomRoleData(client, {name, color, icon}, interaction.guildId, interaction.user.id).then(() => {
       interaction.reply({ content: 'Custom role updated!', ephemeral: true });
     }).catch((err) => {
