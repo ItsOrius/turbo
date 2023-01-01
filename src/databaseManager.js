@@ -42,6 +42,49 @@ const Roles = sequelize.define('roles', {
     allowNull: false
   }
 });
+const ServerSettings = sequelize.define('serverSettings', {
+  id: {
+    type: Sequelize.STRING,
+    primaryKey: true,
+    allowNull: false,
+    unique: true
+  },
+  icons_setting: {
+    type: Sequelize.NUMBER,
+    allowNull: false,
+    defaultValue: 0
+  },
+  colors_setting: {
+    type: Sequelize.NUMBER,
+    allowNull: false,
+    defaultValue: 0
+  },
+  alphanumeric_only: {
+    type: Sequelize.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  icons_options: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    defaultValue: '{"None":"NONE"}'
+  },
+  colors_options: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    defaultValue: '{"None":"#000000"}'
+  },
+  approval_setting: {
+    type: Sequelize.NUMBER,
+    allowNull: false,
+    defaultValue: 0
+  },
+  approval_channel: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    defaultValue: ""
+  }
+});
 
 /**
  * @param {Discord.Guild} guild 
@@ -186,4 +229,4 @@ function setCustomRoleData(client, customRole, guildId, userId) {
   });
 }
 
-module.exports = { CustomRoles, Roles, sequelize, getCustomRoleData, setCustomRoleData };
+module.exports = { CustomRoles, Roles, ServerSettings, sequelize, getCustomRoleData, setCustomRoleData };

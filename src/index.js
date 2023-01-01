@@ -14,7 +14,7 @@ const client = new Discord.Client({
     Discord.GatewayIntentBits.Guilds
   ]
 });
-const { CustomRoles, Roles, sequelize } = require('./databaseManager.js');
+const { CustomRoles, Roles, ServerSettings, sequelize } = require('./databaseManager.js');
 
 
 
@@ -25,6 +25,7 @@ client.on('ready', () => {
   sequelize.sync();
   CustomRoles.sync();
   Roles.sync();
+  ServerSettings.sync();
 });
 
 fs.readdirSync(path.join(__dirname, "./events")).forEach(file => {
