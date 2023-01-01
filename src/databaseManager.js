@@ -240,7 +240,6 @@ function setCustomRoleData(client, customRole, guildId, userId) {
   if (!guild) return reject("Failed to get guild!");
   // return promise with custom role name, color, icon, and role id with as few nests as possible
   return new Promise((resolve, reject) => {
-    console.log(getKey(guildId, userId), customRole, userId);
     CustomRoles.upsert({
       key: getKey(guildId, userId),
       name: customRole.name,

@@ -49,7 +49,6 @@ async function execute(client, interaction) {
         key, name: role.name, color: role.color, icon: role.icon
       }).then(async () => {
         count++;
-        console.log(`Transferred ${role.name} (${count}/${collection.size})`);
         if (count === collection.size) {
           await interaction.reply({ content: `Successfully transfered ${count} booster roles!`, ephemeral: true });
         }

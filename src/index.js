@@ -61,8 +61,6 @@ client.on('interactionCreate', async interaction => {
     const message = await interaction.message.fetch();
     await MessageCaches.findOne({ where: { key: message.id } }).then(res => res.toJSON()).then(async data => {
       const cache = JSON.parse(data.json);
-      console.log(data);
-      console.log(cache);
       switch(data.type) {
         case 0:
           // custom role review message
