@@ -21,7 +21,7 @@ const data = new Discord.SlashCommandBuilder()
           .setDescription('The mode to set the option to.')
           .setChoices(
             { name: "Always Allow", value: 0 },
-            { name: "From Selection", value: 1 },
+            //{ name: "From Selection", value: 1 },
             { name: "Never Allow", value: 2 }
           )
           .setRequired(true);
@@ -35,7 +35,7 @@ const data = new Discord.SlashCommandBuilder()
           .setDescription('The mode to set the option to.')
           .setChoices(
             { name: "Always Allow", value: 0 },
-            { name: "From Selection", value: 1 },
+            //{ name: "From Selection", value: 1 },
             { name: "Require Approval", value: 2 },
             { name: "Never Allow", value: 3 }
           )
@@ -50,7 +50,7 @@ const data = new Discord.SlashCommandBuilder()
           .setDescription('The mode to set the option to.')
           .setChoices(
             { name: "Always Allow", value: 0 },
-            { name: "From Selection", value: 1 },
+            //{ name: "From Selection", value: 1 },
             { name: "Require Approval", value: 2 }
           )
           .setRequired(true);
