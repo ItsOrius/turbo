@@ -18,13 +18,19 @@ function execute(client, interaction) {
   let color = interaction.options.getString('color');
   let icon = interaction.options.getString('icon');
   if (!interaction.member.premiumSince) return interaction.reply({ content: 'You must be a server booster to use this command!', ephemeral: true });
-  if (!/^#[0-9A-Fa-f]{6}$/i.test(color)) return interaction.reply({ content: 'Invalid color!', ephemeral: true });
-  if (icon.toLowerCase() == 'none') icon = "";
   getCustomRoleData(interaction.guildId, interaction.user.id).then(customRole => {
     const role = interaction.guild.roles.cache.get(customRole.id);
+    if (!name && !color && !icon) return interaction.reply({ content: `Your custom role: <@&${role.id}>`, ephemeral: true });
     if (!name) name = role.name ?? "new role";
-    if (!color) color = role.color ?? "#000000";
-    if (!icon) icon = role.icon ?? "";
+    if (!color) color = role.hexColor ?? "#000000";
+    if (!icon) {
+      icon = customRole.icon ?? "";
+    }
+    if (icon.toLowerCase() == 'none') {
+      icon = "";
+      role.edit({ icon: null });
+    };
+    console.log(name, color, icon);
     setCustomRoleData(client, {name, color, icon}, interaction.guildId, interaction.user.id).then(() => {
       interaction.reply({ content: 'Custom role updated!', ephemeral: true });
     }).catch((err) => {
@@ -32,9 +38,11 @@ function execute(client, interaction) {
     });
   }).catch(() => {
     if (!name) return interaction.reply({ content: 'You must provide a name for your role!', ephemeral: true });
-    setCustomRoleData(client, { name: name, color: color, icon: icon }, interaction.guildId, interaction.user.id).then(() => {
+    if (!/^#[0-9A-Fa-f]{6}$/i.test(color)) return interaction.reply({ content: 'Invalid color!', ephemeral: true });
+    if (!icon || icon.toLowerCase() == 'none') icon = "";
+    setCustomRoleData(client, {name, color, icon}, interaction.guildId, interaction.user.id).then(() => {
       interaction.reply({ content: 'Custom role created!', ephemeral: true });
-    }).catch((err) => {
+    }).catch(() => {
       interaction.reply({ content: 'An error occurred while creating your custom role!', ephemeral: true });
     });
   });
