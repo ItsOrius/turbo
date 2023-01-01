@@ -30,7 +30,6 @@ function execute(client, interaction) {
       icon = "";
       role.edit({ icon: null });
     };
-    console.log(name, color, icon);
     setCustomRoleData(client, {name, color, icon}, interaction.guildId, interaction.user.id).then(() => {
       interaction.reply({ content: 'Custom role updated!', ephemeral: true });
     }).catch((err) => {

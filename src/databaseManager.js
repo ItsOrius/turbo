@@ -279,7 +279,11 @@ function getServerSettings(guildId) {
       }
     }).then(settings => {
       if (!settings) {
-        return reject();
+        setServerSettings(guildId, new ServerOptions(guildId)).then(() => {
+          return resolve(new ServerOptions(guildId));
+        }).catch((err) => {
+          return reject(err);
+        });
       }
       return resolve(new ServerOptions(
         guildId, 
@@ -327,4 +331,4 @@ function setServerSettings(guildId, settings) {
   });
 }
 
-module.exports = { CustomRoles, Roles, ServerSettings, sequelize, getCustomRoleData, setCustomRoleData, getServerSettings, setServerSettings };
+module.exports = { CustomRoles, Roles, ServerSettings, sequelize, ServerOptions, getCustomRoleData, setCustomRoleData, getServerSettings, setServerSettings };
