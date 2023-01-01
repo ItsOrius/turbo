@@ -400,6 +400,7 @@ module.exports = {
   sequelize, 
   ServerOptions, 
   MessageCache,
+  getKey,
   getCustomRoleData, 
   setCustomRoleData, 
   getServerSettings, 
