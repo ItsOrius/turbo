@@ -1,5 +1,5 @@
 const Discord = require('discord.js');
-const { getCustomRoleData, setCustomRoleData, getServerSettings } = require('../databaseManager.js');
+const { getCustomRoleData, setCustomRoleData, getServerSettings, setMessageCache, MessageCache } = require('../databaseManager.js');
 
 const CHECKS = {
   ALPHANUMERIC: 'Your role name must only contain alphanumeric characters (0-9, A-Z, a-z, and spaces).',
@@ -28,7 +28,6 @@ const data = new Discord.SlashCommandBuilder()
 function passesChecks(guildId, roleName, submittedName, submittedIcon) {
   return new Promise((resolve, reject) => {
     getServerSettings(guildId).then(serverSettings => {
-      console.log(serverSettings);
       const checks = [];
       if (serverSettings.alphanumericOnly && submittedName) {
         if (!/^[a-zA-Z0-9 ]+$/.test(roleName)) checks.push(CHECKS.ALPHANUMERIC);
@@ -79,7 +78,7 @@ function createReviewMessage(interaction, roleName, roleColor, roleIcon) {
     const reviewChannel = interaction.guild.channels.cache.get(serverSettings.approvalChannel);
     if (!reviewChannel) return interaction.reply({ content: 'You were flagged for review, but the server has no channel!\nPlease inform a staff member ASAP!', ephemeral: true });
     // send review message with embed and buttons
-    reviewChannel.send({ embeds: [embed], components: [
+    reviewChannel.send({embeds: [embed], components: [
       new Discord.ActionRowBuilder()
         .addComponents(
           new Discord.ButtonBuilder()
@@ -91,9 +90,12 @@ function createReviewMessage(interaction, roleName, roleColor, roleIcon) {
             .setLabel('Deny')
             .setStyle(Discord.ButtonStyle.Danger)
         )
-    ] }).then(message => {
+    ]}).then(message => {
       // add message to database
-      console.log(`Created review message ${message.id} for ${interaction.user.id} in ${interaction.guildId}`);
+      const json = {
+        roleName, roleColor, roleIcon, userId: interaction.user.id
+      }
+      setMessageCache(new MessageCache(message.id, 0, JSON.stringify(json))).then(() => {}).catch(console.error);
     }).catch(err => {
       console.error(err);
       interaction.reply({ content: 'An error occurred while sending your role for review. Please try again later.', ephemeral: true });

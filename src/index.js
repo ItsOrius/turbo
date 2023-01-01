@@ -4,6 +4,7 @@ require('dotenv').config();
 const Discord = require('discord.js');
 const fs = require('fs');
 const path = require('path');
+const { setCustomRoleData } = require("./databaseManager.js")
 
 
 
@@ -24,7 +25,7 @@ client.on('ready', () => {
   client.user.setActivity({ name: "with /customrole!", type: Discord.ActivityType.Playing })
   sequelize.sync();
   CustomRoles.sync();
-  MessageCaches.sync({ force: true });
+  MessageCaches.sync();
   Roles.sync();
   ServerSettings.sync();
 });
@@ -58,7 +59,30 @@ client.on('interactionCreate', async interaction => {
   // button handler
   if (interaction.isButton()) {
     const message = await interaction.message.fetch();
-    const cache = await MessageCaches.findOne({ where: { key: message.id } });
+    await MessageCaches.findOne({ where: { key: message.id } }).then(res => res.toJSON()).then(async data => {
+      const cache = JSON.parse(data.json);
+      console.log(data);
+      console.log(cache);
+      switch(data.type) {
+        case 0:
+          // custom role review message
+          const { roleName, roleColor, roleIcon, userId } = cache;
+          switch(interaction.customId) {
+            case 'approve':
+              setCustomRoleData(client, { name: roleName, color: roleColor, icon: roleIcon }, interaction.guild.id, userId).then(async () => {
+                await interaction.update({ content: "Approved!", components: [] });
+                setTimeout(() => interaction.deleteReply(), 5000);
+              }).catch(async (err) => {
+                await interaction.update({ content: `There was an error while executing this command!\n\`\`\`${err}\`\`\``, components: [] });
+              });
+              break;
+            case 'deny':
+              await interaction.update({ content: "Denied!", components: [] });
+              setTimeout(() => interaction.deleteReply(), 5000);
+              break;
+          }
+      }
+    }).catch(async (err) => { interaction.reply({ content: `There was an error while executing this command!\n\`\`\`${err}\`\`\``, ephemeral: true }) });
   }
 });
 

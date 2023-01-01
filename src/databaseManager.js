@@ -135,6 +135,18 @@ class ServerOptions {
     this.approvalChannel = approvalChannel ?? "";
   }
 }
+class MessageCache {
+  /**
+   * @param {string} key
+   * @param {number} type
+   * @param {string} json
+   */
+  constructor(key, type, json) {
+    this.key = key;
+    this.type = type;
+    this.json = JSON.parse(json);
+  }
+}
 
 
 
@@ -221,13 +233,14 @@ function getCustomRoleData(guildId, userId) {
  * @param {object} customRole 
  * @param {string} guildId 
  * @param {string} userId 
- * @returns 
+ * @returns {Promise<void>}
  */
 function setCustomRoleData(client, customRole, guildId, userId) {
   const guild = client.guilds.cache.get(guildId);
-  if (!guild) return reject();
+  if (!guild) return reject("Failed to get guild!");
   // return promise with custom role name, color, icon, and role id with as few nests as possible
   return new Promise((resolve, reject) => {
+    console.log(getKey(guildId, userId), customRole, userId);
     CustomRoles.upsert({
       key: getKey(guildId, userId),
       name: customRole.name,
@@ -347,6 +360,38 @@ function setServerSettings(guildId, settings) {
   });
 }
 
+/**
+ * @param {string} messageId 
+ * @returns {Promise<MessageCache>}
+ */
+function getMessageCache(messageId) {
+  return new Promise((resolve, reject) => {
+    MessageCaches.findOne({
+      where: {
+        key: messageId
+      }
+    }).then(entry => {
+      if (!entry.json) return reject();
+      return resolve(new MessageCache(entry.key, entry.type, entry.json));
+    }).catch(reject);
+  });
+}
+
+/**
+ * @param {MessageCache} messageCache
+ */
+function setMessageCache(messageCache) {
+  return new Promise((resolve, reject) => {
+    MessageCaches.upsert({
+      key: messageCache.key,
+      type: messageCache.type,
+      json: JSON.stringify(messageCache.json)
+    }).then(() => {
+      return resolve();
+    }).catch(reject);
+  });
+}
+
 module.exports = { 
   CustomRoles, 
   MessageCaches, 
@@ -354,8 +399,11 @@ module.exports = {
   ServerSettings, 
   sequelize, 
   ServerOptions, 
+  MessageCache,
   getCustomRoleData, 
   setCustomRoleData, 
   getServerSettings, 
-  setServerSettings
+  setServerSettings,
+  getMessageCache,
+  setMessageCache
 };
