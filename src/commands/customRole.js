@@ -7,6 +7,8 @@ const CHECKS = {
   UNSUPPORTED_ICON: 'Your role icon is unsupported. Please try a different icon.',
   REVIEW_NAME: 'Name',
   REVIEW_ICON: 'Icon',
+  NAMES_DISABLED: 'Custom role names are disabled on this server.',
+  ICONS_DISABLED: 'Custom role icons are disabled on this server.'
 }
 
 const data = new Discord.SlashCommandBuilder()
@@ -36,6 +38,8 @@ function passesChecks(guildId, roleName, submittedName, submittedIcon) {
       if (serverSettings.iconSetting == 1 && !Object.values(serverSettings.iconsOptions).includes(roleIcon)) checks.push(CHECKS.UNSUPPORTED_ICON);
       if (serverSettings.nameSetting == 2 && submittedName) checks.push(CHECKS.REVIEW_NAME);
       if (serverSettings.iconSetting == 2 && submittedIcon) checks.push(CHECKS.REVIEW_ICON);
+      if (serverSettings.nameSetting == 3 && submittedName) checks.push(CHECKS.NAMES_DISABLED);
+      if (serverSettings.iconSetting == 3 && submittedIcon) checks.push(CHECKS.ICONS_DISABLED);
       return resolve(checks);
     }).catch(reject);
   });
@@ -185,6 +189,16 @@ function execute(client, interaction) {
         return;
       }
       // runs if role doesn't pass every check
+      if (checks.includes(CHECKS.NAMES_DISABLED)) {
+        // runs when role names are disabled
+        interaction.reply({ embeds: [quickEmbed("Invalid Input", CHECKS.NAMES_DISABLED, Discord.Colors.Red)], ephemeral: true });
+        return;
+      }
+      if (checks.includes(CHECKS.ICONS_DISABLED)) {
+        // runs when role icons are disabled
+        interaction.reply({ embeds: [quickEmbed("Invalid Input", CHECKS.ICONS_DISABLED, Discord.Colors.Red)], ephemeral: true });
+        return;
+      }
       if (checks.includes(CHECKS.ALPHANUMERIC)) {
         // runs when role name is not alphanumeric
         interaction.reply({ embeds: [quickEmbed("Invalid Name", CHECKS.ALPHANUMERIC, Discord.Colors.Red)], ephemeral: true });
