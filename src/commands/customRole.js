@@ -1,5 +1,13 @@
 const Discord = require('discord.js');
-const { getCustomRoleData, setCustomRoleData } = require('../databaseManager.js');
+const { getCustomRoleData, setCustomRoleData, getServerSettings } = require('../databaseManager.js');
+
+const CHECKS = {
+  ALPHANUMERIC: 'Your role name must only contain alphanumeric characters (0-9, A-Z, a-z, and spaces).',
+  UNSUPPORTED_NAME: 'Your role name is unsupported. Please try a different name.',
+  UNSUPPORTED_ICON: 'Your role icon is unsupported. Please try a different icon.',
+  REVIEW_NAME: 'Name',
+  REVIEW_ICON: 'Icon',
+}
 
 const data = new Discord.SlashCommandBuilder()
   .setName('customrole')
@@ -8,17 +16,108 @@ const data = new Discord.SlashCommandBuilder()
   .addStringOption(option => option.setName('color').setDescription('The hexadecimal color of your role. For example, #00CCFF.').setMinLength(7).setMaxLength(7))
   .addStringOption(option => option.setName('icon').setDescription('A URL for the icon of the role. Type "NONE" to remove it.'));
 
+
+
 /**
- * 
+ * @param {string} guildId 
+ * @param {string} roleName 
+ * @param {boolean} submittedName
+ * @param {boolean} submittedIcon
+ * @returns {string[]}
+ */
+function passesChecks(guildId, roleName, submittedName, submittedIcon) {
+  return new Promise((resolve, reject) => {
+    getServerSettings(guildId).then(serverSettings => {
+      console.log(serverSettings);
+      const checks = [];
+      if (serverSettings.alphanumericOnly && submittedName) {
+        if (!/^[a-zA-Z0-9 ]+$/.test(roleName)) checks.push(CHECKS.ALPHANUMERIC);
+      }
+      if (serverSettings.nameSetting == 1 && !Object.values(serverSettings.nameOptions).includes(roleName)) checks.push(CHECKS.UNSUPPORTED_NAME);
+      if (serverSettings.iconSetting == 1 && !Object.values(serverSettings.iconsOptions).includes(roleIcon)) checks.push(CHECKS.UNSUPPORTED_ICON);
+      if (serverSettings.nameSetting == 2 && submittedName) checks.push(CHECKS.REVIEW_NAME);
+      if (serverSettings.iconSetting == 2 && submittedIcon) checks.push(CHECKS.REVIEW_ICON);
+      return resolve(checks);
+    }).catch(reject);
+  });
+}
+
+
+
+/**
+ * @param {string} name 
+ * @param {string} description 
+ * @param {string} color 
+ * @returns {Discord.EmbedBuilder}
+ */
+function quickEmbed(name, description, color) {
+  return new Discord.EmbedBuilder()
+    .setTitle(name)
+    .setDescription(description)
+    .setColor(color);
+}
+
+
+
+/**
+ * @param {Discord.CommandInteraction} interaction
+ * @param {string} roleName
+ * @param {string} roleColor
+ * @param {string} roleIcon
+ */
+function createReviewMessage(interaction, roleName, roleColor, roleIcon) {
+  const embed = quickEmbed('Custom Role Review', `A custom role has been requested by <@${interaction.user.id}>.`, roleColor);
+  if (roleName) embed.addFields([{ name: "Name", value: roleName }]);
+  if (roleIcon) {
+    embed.setImage(roleIcon);
+    embed.addFields([
+      { name: "Icon", value: "The requested icon is shown below." },
+    ]);
+  }
+  getServerSettings(interaction.guildId).then(serverSettings => {
+    // make sure review channel exists
+    const reviewChannel = interaction.guild.channels.cache.get(serverSettings.approvalChannel);
+    if (!reviewChannel) return interaction.reply({ content: 'You were flagged for review, but the server has no channel!\nPlease inform a staff member ASAP!', ephemeral: true });
+    // send review message with embed and buttons
+    reviewChannel.send({ embeds: [embed], components: [
+      new Discord.ActionRowBuilder()
+        .addComponents(
+          new Discord.ButtonBuilder()
+            .setCustomId('approve')
+            .setLabel('Approve')
+            .setStyle(Discord.ButtonStyle.Success),
+          new Discord.ButtonBuilder()
+            .setCustomId('deny')
+            .setLabel('Deny')
+            .setStyle(Discord.ButtonStyle.Danger)
+        )
+    ] }).then(message => {
+      // add message to database
+      console.log(`Created review message ${message.id} for ${interaction.user.id} in ${interaction.guildId}`);
+    }).catch(err => {
+      console.error(err);
+      interaction.reply({ content: 'An error occurred while sending your role for review. Please try again later.', ephemeral: true });
+    });
+  }).catch(err => {
+    console.error(err);
+  });
+}
+
+
+
+/**
  * @param {Discord.Client} client 
  * @param {Discord.CommandInteraction} interaction 
  */
 function execute(client, interaction) {
   let name = interaction.options.getString('name');
+  const submittedName = name;
   let color = interaction.options.getString('color');
   let icon = interaction.options.getString('icon');
+  const submittedIcon = (!icon || icon.toLowerCase() == 'none') ? false : true;
   if (!interaction.member.premiumSince) return interaction.reply({ content: 'You must be a server booster to use this command!', ephemeral: true });
   getCustomRoleData(interaction.guildId, interaction.user.id).then(customRole => {
+    // runs if custom role exists
     const role = interaction.guild.roles.cache.get(customRole.id);
     if (!name && !color && !icon) return interaction.reply({ content: `Your custom role: <@&${role.id}>`, ephemeral: true });
     if (!name) name = role.name ?? "new role";
@@ -30,19 +129,83 @@ function execute(client, interaction) {
       icon = "";
       role.edit({ icon: null });
     };
-    setCustomRoleData(client, {name, color, icon}, interaction.guildId, interaction.user.id).then(() => {
-      interaction.reply({ content: 'Custom role updated!', ephemeral: true });
-    }).catch((err) => {
-      interaction.reply({ content: 'An error occurred while updating your custom role!', ephemeral: true });
+    // check if role passes checks
+    passesChecks(interaction.guildId, name, submittedName, submittedIcon).then(checks => {
+      if (checks.length < 1) {
+        // edit custom role data- no checks necessary
+        setCustomRoleData(client, {name, color, icon}, interaction.guildId, interaction.user.id).then(() => {
+          interaction.reply({ content: 'Custom role updated!', ephemeral: true });
+        }).catch((err) => {
+          interaction.reply({ content: 'An error occurred while updating your custom role!', ephemeral: true });
+        });
+        return;
+      }
+      // runs if role doesn't pass every check
+      if (checks.includes(CHECKS.ALPHANUMERIC)) {
+        // runs when role name is not alphanumeric
+        interaction.reply({ embeds: [quickEmbed("Invalid Name", CHECKS.ALPHANUMERIC, Discord.Colors.Red)], ephemeral: true });
+        return;
+      }
+      if (checks.includes(CHECKS.UNSUPPORTED_NAME)) {
+        // runs when role name is not supported
+        interaction.reply({ embeds: [quickEmbed("Invalid Name", CHECKS.UNSUPPORTED_NAME, Discord.Colors.Red)], ephemeral: true });
+        return;
+      }
+      if (checks.includes(CHECKS.UNSUPPORTED_ICON)) {
+        // runs when role icon is not supported
+        interaction.reply({ embeds: [quickEmbed("Invalid Icon", CHECKS.UNSUPPORTED_ICON, Discord.Colors.Red)], ephemeral: true });
+        return;
+      }
+      // runs if role needs to be reviewed
+      interaction.reply({ embeds: [
+        quickEmbed("Review", "Your updated role is being reviewed.\nPlease be patient while a moderator checks your role!", Discord.Colors.Yellow)
+      ], ephemeral: true });
+      // send review embed to review channel
+      createReviewMessage(interaction, name, color, icon);
+    }).catch(err => {
+      console.error(err);
     });
   }).catch(() => {
+    // runs if custom role doesn't exist
+    // check that options are valid and accounted for
     if (!name) return interaction.reply({ content: 'You must provide a name for your role!', ephemeral: true });
     if (!/^#[0-9A-Fa-f]{6}$/i.test(color)) return interaction.reply({ content: 'Invalid color!', ephemeral: true });
     if (!icon || icon.toLowerCase() == 'none') icon = "";
-    setCustomRoleData(client, {name, color, icon}, interaction.guildId, interaction.user.id).then(() => {
-      interaction.reply({ content: 'Custom role created!', ephemeral: true });
+    // check if role passes checks
+    passesChecks(interaction.guildId, name, submittedName, submittedIcon).then(checks => {
+      if (checks.length < 1) {
+        // set custom role data- no checks necessary
+        setCustomRoleData(client, {name, color, icon}, interaction.guildId, interaction.user.id).then(() => {
+          interaction.reply({ content: 'Custom role created!', ephemeral: true });
+        }).catch(() => {
+          interaction.reply({ content: 'An error occurred while creating your custom role!', ephemeral: true });
+        });
+        return;
+      }
+      // runs if role doesn't pass every check
+      if (checks.includes(CHECKS.ALPHANUMERIC)) {
+        // runs when role name is not alphanumeric
+        interaction.reply({ embeds: [quickEmbed("Invalid Name", CHECKS.ALPHANUMERIC, Discord.Colors.Red)], ephemeral: true });
+        return;
+      }
+      if (checks.includes(CHECKS.UNSUPPORTED_NAME)) {
+        // runs when role name is not supported
+        interaction.reply({ embeds: [quickEmbed("Invalid Name", CHECKS.UNSUPPORTED_NAME, Discord.Colors.Red)], ephemeral: true });
+        return;
+      }
+      if (checks.includes(CHECKS.UNSUPPORTED_ICON)) {
+        // runs when role icon is not supported
+        interaction.reply({ embeds: [quickEmbed("Invalid Icon", CHECKS.UNSUPPORTED_ICON, Discord.Colors.Red)], ephemeral: true });
+        return;
+      }
+      // runs if role needs to be reviewed
+      interaction.reply({ embeds: [
+        quickEmbed("Review", "Your new role is being reviewed.\nPlease be patient while a moderator checks your role!", Discord.Colors.Yellow)
+      ], ephemeral: true });
+      // send review embed to review channel
+      createReviewMessage(interaction, name, color, icon);
     }).catch(() => {
-      interaction.reply({ content: 'An error occurred while creating your custom role!', ephemeral: true });
+      interaction.reply({ content: 'An error occurred while checking your role!', ephemeral: true });
     });
   });
 }

@@ -1,5 +1,5 @@
 const Discord = require('discord.js');
-const { getServerSettings, setServerSettings, ServerOptions } = require("../databaseManager.js");
+const { getServerSettings, setServerSettings } = require("../databaseManager.js");
 
 const data = new Discord.SlashCommandBuilder()
   .setName('settings')
@@ -82,21 +82,24 @@ function execute(client, interaction) {
   const option = interaction.options.getNumber('option');
   const channel = interaction.options.getChannel('channel');
   getServerSettings(interaction.guild.id).then(settings => {
+    if (option == 2 && !settings.approvalChannel) {
+      return interaction.reply({ content: "You must set a review channel before you can require approval.", ephemeral: true });
+    }
     switch (subcommand) {
       case 'alphanumeric':
         settings.alphanumericOnly = !value;
         break;
       case 'color':
-        settings.colorMode = option;
+        settings.colorSetting = option;
         break;
       case 'icon':
-        settings.iconMode = option;
+        settings.iconSetting = option;
         break;
       case 'name':
-        settings.nameMode = option;
+        settings.nameSetting = option;
         break;
       case 'review':
-        settings.reviewChannel = channel.id;
+        settings.approvalChannel = channel.id;
         break;
     }
     setServerSettings(interaction.guild.id, settings).then(() => {

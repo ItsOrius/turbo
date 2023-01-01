@@ -14,7 +14,7 @@ const client = new Discord.Client({
     Discord.GatewayIntentBits.Guilds
   ]
 });
-const { CustomRoles, Roles, ServerSettings, sequelize } = require('./databaseManager.js');
+const { CustomRoles, MessageCaches, Roles, ServerSettings, sequelize } = require('./databaseManager.js');
 
 
 
@@ -24,8 +24,9 @@ client.on('ready', () => {
   client.user.setActivity({ name: "with /customrole!", type: Discord.ActivityType.Playing })
   sequelize.sync();
   CustomRoles.sync();
+  MessageCaches.sync({ force: true });
   Roles.sync();
-  ServerSettings.sync({ force: true });
+  ServerSettings.sync();
 });
 
 fs.readdirSync(path.join(__dirname, "./events")).forEach(file => {
@@ -43,13 +44,21 @@ fs.readdirSync(path.join(__dirname, "./commands")).forEach(file => {
 });
 
 client.on('interactionCreate', async interaction => {
-  if (!interaction.isCommand()) return;
-  const command = client.commands.get(interaction.commandName);
-  if (!command) return;
-  try {
-    await command.execute(client, interaction);
-  } catch (error) {
-    await interaction.reply({ content: `There was an error while executing this command!\n\`\`\`${error}\`\`\``, ephemeral: true });
+  // command handler
+  if (interaction.isCommand()) {
+    const command = client.commands.get(interaction.commandName);
+    if (!command) return;
+    try {
+      await command.execute(client, interaction);
+    } catch (error) {
+      await interaction.reply({ content: `There was an error while executing this command!\n\`\`\`${error}\`\`\``, ephemeral: true });
+    }
+    return;
+  }
+  // button handler
+  if (interaction.isButton()) {
+    const message = await interaction.message.fetch();
+    const cache = await MessageCaches.findOne({ where: { key: message.id } });
   }
 });
 

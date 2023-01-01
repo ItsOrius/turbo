@@ -30,6 +30,22 @@ const CustomRoles = sequelize.define('customRoles', {
     allowNull: false
   }
 });
+const MessageCaches = sequelize.define('messageCaches', {
+  key: {
+    type: Sequelize.STRING,
+    primaryKey: true,
+    allowNull: false,
+    unique: true
+  },
+  type: {
+    type: Sequelize.NUMBER,
+    allowNull: false
+  },
+  json: {
+    type: Sequelize.STRING,
+    allowNull: false
+  }
+});
 const Roles = sequelize.define('roles', {
   key: {
     type: Sequelize.STRING,
@@ -98,8 +114,8 @@ class ServerOptions {
   /**
    * 
    * @param {string} serverId 
-   * @param {number} colorsSetting 
-   * @param {number} iconsSetting 
+   * @param {number} colorSetting 
+   * @param {number} iconSetting 
    * @param {number} nameSetting 
    * @param {boolean} alphanumericOnly 
    * @param {object} colorsOptions 
@@ -107,10 +123,10 @@ class ServerOptions {
    * @param {object} nameOptions 
    * @param {string} approvalChannel 
    */
-  constructor(serverId, colorsSetting, iconsSetting, nameSetting, alphanumericOnly, colorsOptions, iconsOptions, nameOptions, approvalChannel) {
+  constructor(serverId, colorSetting, iconSetting, nameSetting, alphanumericOnly, colorsOptions, iconsOptions, nameOptions, approvalChannel) {
     this.serverId = serverId ?? "";
-    this.colorsSetting = colorsSetting ?? 0;
-    this.iconsSetting = iconsSetting ?? 0;
+    this.colorSetting = colorSetting ?? 0;
+    this.iconSetting = iconSetting ?? 0;
     this.nameSetting = nameSetting ?? 0;
     this.alphanumericOnly = alphanumericOnly ?? 0;
     this.colorsOptions = colorsOptions ?? { "None": "#000000" };
@@ -315,8 +331,8 @@ function setServerSettings(guildId, settings) {
   return new Promise((resolve, reject) => {
     ServerSettings.upsert({
       id: guildId,
-      colors_setting: settings.colorsSetting,
-      icons_setting: settings.iconsSetting,
+      color_setting: settings.colorSetting,
+      icons_setting: settings.iconSetting,
       name_setting: settings.nameSetting,
       alphanumeric_only: settings.alphanumericOnly,
       colors_options: JSON.stringify(settings.colorsOptions),
@@ -331,4 +347,15 @@ function setServerSettings(guildId, settings) {
   });
 }
 
-module.exports = { CustomRoles, Roles, ServerSettings, sequelize, ServerOptions, getCustomRoleData, setCustomRoleData, getServerSettings, setServerSettings };
+module.exports = { 
+  CustomRoles, 
+  MessageCaches, 
+  Roles, 
+  ServerSettings, 
+  sequelize, 
+  ServerOptions, 
+  getCustomRoleData, 
+  setCustomRoleData, 
+  getServerSettings, 
+  setServerSettings
+};
