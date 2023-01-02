@@ -69,14 +69,18 @@ client.on('interactionCreate', async interaction => {
             case 'approve':
               setCustomRoleData(client, { name: roleName, color: roleColor, icon: roleIcon }, interaction.guild.id, userId).then(async () => {
                 await interaction.update({ content: "Approved!", components: [] });
-                setTimeout(() => interaction.deleteReply(), 5000);
+                setTimeout(() => {
+                  interaction.deleteReply().then(() => {}).catch(() => {});
+                }, 5000);
               }).catch(async (err) => {
                 await interaction.update({ content: `There was an error while executing this command!\n\`\`\`${err}\`\`\``, components: [] });
               });
               break;
             case 'deny':
               await interaction.update({ content: "Denied!", components: [] });
-              setTimeout(() => interaction.deleteReply(), 5000);
+              setTimeout(() => {
+                interaction.deleteReply().then(() => {}).catch(() => {});
+              }, 5000);
               break;
           }
       }
