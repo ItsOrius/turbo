@@ -25,32 +25,50 @@ async function execute(client, interaction) {
     await interaction.reply({ content: "The start role must be higher than the end role!", ephemeral: true });
     return;
   }
+  // fetch every member of the guild
+  await guild.members.fetch();
   // get array of every role between the start and end roles, unless inclusive is true
-  const collection = guild.roles.cache.filter(role => role.position < start_role.position && role.position > end_role.position);
-  if (inclusive) {
-    collection.push(start_role);
-    collection.push(end_role);
+  const max = inclusive ? start_role.position + 1 : start_role.position
+  const min = inclusive ? end_role.position - 1 : end_role.position;
+  const collection = guild.roles.cache.filter(role => {
+    return role.position < max && role.position > min;
+  });
+  if (!collection) {
+    await interaction.reply({ content: "There are no roles between the start and end roles!", ephemeral: true });
+    return;
   }
+  if (collection.size === 0) {
+    await interaction.reply({ content: "There are no roles between the start and end roles!", ephemeral: true });
+    return;
+  }
+  // send "please wait" message and then edit it when done
+  await interaction.reply({ content: `Beginning transfer of ${collection.size} roles... this may take a while!`, ephemeral: true });
+  console.log(`Beginning transfer of ${collection.size} roles for ${guild.name} (${guild.id})...`);
   let count = 0;
-  collection.map(role => {
-    return {
-      id: role.id,
-      name: role.name,
-      color: role.color,
-      icon: role.iconURL() || "",
-      members: role.members.map(member => member.id)
-    };
-  }).forEach(async role => {
-    const key = getKey(guild.id, role.members[0])
+  let failedCount = 0;
+  collection.forEach(async role => {
+    const member = role.members.first();
+    if (!member) {
+      failedCount++;
+      console.log(`Skipping role ${role.name} (${role.id}) for ${guild.name} (${guild.id}) because it has no members!\nCurrent count: ${count + failedCount}/${collection.size}`);
+      if (count + failedCount >= collection.size) {
+        await interaction.editReply({ content: `Successfully transfered ${count} booster roles with ${failedCount} empty roles.` });
+      }
+      return;
+    }
+    const key = getKey(guild.id, member.id);
     Roles.upsert({
       key, id: role.id
     }).then(async () => {
       CustomRoles.upsert({
-        key, name: role.name, color: role.color, icon: role.icon
+        key, name: role.name, color: role.color, icon: role.icon ?? ""
       }).then(async () => {
         count++;
-        if (count === collection.size) {
-          await interaction.reply({ content: `Successfully transfered ${count} booster roles!`, ephemeral: true });
+        console.log(
+          `Transferring role ${role.name} (${role.id}) for ${guild.name} (${guild.id}) and user with ID of ${member.id}...\nCurrent count: ${count + failedCount}/${collection.size}`
+        );
+        if (count + failedCount >= collection.size) {
+          await interaction.editReply({ content: `Successfully transfered ${count} booster roles with ${failedCount} empty roles.` });
         }
       });
     });

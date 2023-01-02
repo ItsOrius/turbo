@@ -11,8 +11,8 @@ const { setCustomRoleData } = require("./databaseManager.js")
 /* global variables */
 const client = new Discord.Client({
   intents: [
-    Discord.GatewayIntentBits.GuildMembers,
-    Discord.GatewayIntentBits.Guilds
+    Discord.GatewayIntentBits.Guilds,
+    Discord.GatewayIntentBits.GuildMembers
   ]
 });
 const { CustomRoles, MessageCaches, Roles, ServerSettings, sequelize } = require('./databaseManager.js');

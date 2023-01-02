@@ -80,7 +80,10 @@ function createReviewMessage(interaction, roleName, roleColor, roleIcon) {
   getServerSettings(interaction.guildId).then(serverSettings => {
     // make sure review channel exists
     const reviewChannel = interaction.guild.channels.cache.get(serverSettings.approvalChannel);
-    if (!reviewChannel) return interaction.reply({ content: 'You were flagged for review, but the server has no channel!\nPlease inform a staff member ASAP!', ephemeral: true });
+    if (!reviewChannel) return interaction.channel.send({
+      content: `Hey, <@${interaction.user.id}>! You were flagged for review, but the server has no channel!\nPlease inform a staff member ASAP!`,
+      ephemeral: true
+    });
     // send review message with embed and buttons
     reviewChannel.send({embeds: [embed], components: [
       new Discord.ActionRowBuilder()
@@ -101,8 +104,12 @@ function createReviewMessage(interaction, roleName, roleColor, roleIcon) {
       }
       setMessageCache(new MessageCache(message.id, 0, JSON.stringify(json))).then(() => {}).catch(console.error);
     }).catch(err => {
-      console.error(err);
-      interaction.reply({ content: 'An error occurred while sending your role for review. Please try again later.', ephemeral: true });
+      interaction.channel.send({
+        content: `Hey, <@${interaction.user.id}>! An error occurred while sending your role for review. Please try again later.\n\`\`\`${err}\`\`\``,
+        ephemeral: true
+      }).then(() => {}).catch((err) => {
+        console.log(`Error sending error message to ${interaction.user.id}:\n${err}`);
+      });
     });
   }).catch(err => {
     console.error(err);
