@@ -172,9 +172,12 @@ function execute(client, interaction) {
       // runs if role needs to be reviewed
       interaction.reply({ embeds: [
         quickEmbed("Review", "Your updated role is being reviewed.\nPlease be patient while a moderator checks your role!", Discord.Colors.Yellow)
-      ], ephemeral: true });
-      // send review embed to review channel
-      createReviewMessage(interaction, name, color, icon);
+      ], ephemeral: true }).then(() => {
+        // send review embed to review channel
+        createReviewMessage(interaction, name, color, icon);
+      }).catch(err => {
+        interaction.reply({ content: `An error occurred while sending your role for review!\n\`\`\`${err}\`\`\``, ephemeral: true });  
+      });
     }).catch(err => {
       console.error(err);
     });

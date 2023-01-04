@@ -59,7 +59,14 @@ client.on('interactionCreate', async interaction => {
   // button handler
   if (interaction.isButton()) {
     const message = await interaction.message.fetch();
-    await MessageCaches.findOne({ where: { key: message.id } }).then(res => res.toJSON()).then(async data => {
+    await MessageCaches.findOne({ where: { key: message.id } }).then(res => {
+      if (res) {
+        return res;
+      }
+      interaction.reply({ content: "No matching request in our database!\nWe're sorry for the inconvenience, you may delete the request message.", ephemeral: true });
+      return null;
+    }).then(async data => {
+      if (!data) return;
       const cache = JSON.parse(data.json);
       switch(data.type) {
         case 0:
