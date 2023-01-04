@@ -1,5 +1,6 @@
 const Discord = require('discord.js');
 const { getCustomRoleData, setCustomRoleData, getServerSettings, setMessageCache, MessageCache } = require('../databaseManager.js');
+const tempUserStorage = [];
 
 const CHECKS = {
   ALPHANUMERIC: 'Your role name must only contain alphanumeric characters (0-9, A-Z, a-z, and spaces).',
@@ -169,6 +170,13 @@ function execute(client, interaction) {
         interaction.reply({ embeds: [quickEmbed("Invalid Icon", CHECKS.UNSUPPORTED_ICON, Discord.Colors.Red)], ephemeral: true });
         return;
       }
+      // skips if user is already in temp storage
+      if (tempUserStorage.includes(interaction.user.id)) {
+        interaction.reply({ embeds: [
+          quickEmbed("Woah, slow down!", "You already sent a role request requiring review in the past 15 minutes.\nPlease try again later!")
+        ], ephemeral: true });
+        return;
+      }
       // runs if role needs to be reviewed
       interaction.reply({ embeds: [
         quickEmbed("Review", "Your updated role is being reviewed.\nPlease be patient while a moderator checks your role!", Discord.Colors.Yellow)
@@ -224,12 +232,21 @@ function execute(client, interaction) {
         interaction.reply({ embeds: [quickEmbed("Invalid Icon", CHECKS.UNSUPPORTED_ICON, Discord.Colors.Red)], ephemeral: true });
         return;
       }
+      // skips if user is already in temp storage
+      if (tempUserStorage.includes(interaction.user.id)) {
+        interaction.reply({ embeds: [
+          quickEmbed("Woah, slow down!", "You already sent a role request requiring review in the past 15 minutes.\nPlease try again later!")
+        ], ephemeral: true });
+        return;
+      }
       // runs if role needs to be reviewed
       interaction.reply({ embeds: [
         quickEmbed("Review", "Your new role is being reviewed.\nPlease be patient while a moderator checks your role!", Discord.Colors.Yellow)
       ], ephemeral: true });
       // send review embed to review channel
       createReviewMessage(interaction, name, color, icon);
+      // add user to temp storage
+      tempUserStorage.push(interaction.user.id);
     }).catch(() => {
       interaction.reply({ content: 'An error occurred while checking your role!', ephemeral: true });
     });
