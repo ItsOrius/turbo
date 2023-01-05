@@ -177,14 +177,13 @@ function execute(client, interaction) {
         ], ephemeral: true });
         return;
       }
+      // send review embed to review channel
+      createReviewMessage(interaction, name, color, icon);
       // runs if role needs to be reviewed
       interaction.reply({ embeds: [
         quickEmbed("Review", "Your updated role is being reviewed.\nPlease be patient while a moderator checks your role!", Discord.Colors.Yellow)
-      ], ephemeral: true }).then(() => {
-        // send review embed to review channel
-        createReviewMessage(interaction, name, color, icon);
-      }).catch(err => {
-        interaction.reply({ content: `An error occurred while sending your role for review!\n\`\`\`${err}\`\`\``, ephemeral: true });  
+      ], ephemeral: true }).catch(err => {
+        interaction.reply({ content: "Your updated role is being reviewed.\nPlease be patient while a moderator checks your role!", ephemeral: true });  
       });
     }).catch(err => {
       console.error(err);
@@ -239,14 +238,16 @@ function execute(client, interaction) {
         ], ephemeral: true });
         return;
       }
-      // runs if role needs to be reviewed
-      interaction.reply({ embeds: [
-        quickEmbed("Review", "Your new role is being reviewed.\nPlease be patient while a moderator checks your role!", Discord.Colors.Yellow)
-      ], ephemeral: true });
       // send review embed to review channel
       createReviewMessage(interaction, name, color, icon);
       // add user to temp storage
       tempUserStorage.push(interaction.user.id);
+      // runs if role needs to be reviewed
+      interaction.reply({ embeds: [
+        quickEmbed("Review", "Your new role is being reviewed.\nPlease be patient while a moderator checks your role!", Discord.Colors.Yellow)
+      ], ephemeral: true }).catch(err => {
+        interaction.reply({ content: "Your updated role is being reviewed.\nPlease be patient while a moderator checks your role!", ephemeral: true });  
+      });
     }).catch(() => {
       interaction.reply({ content: 'An error occurred while checking your role!', ephemeral: true });
     });
