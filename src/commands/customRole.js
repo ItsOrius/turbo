@@ -250,8 +250,8 @@ function execute(client, interaction) {
         if (interaction.replied) return;
         interaction.reply({ content: "Your updated role is being reviewed.\nPlease be patient while a moderator checks your role!", ephemeral: true });
       });
-    }).catch(() => {
-      interaction.reply({ content: 'An error occurred while checking your role!', ephemeral: true });
+    }).catch(err => {
+      interaction.reply({ content: `An error occurred while checking your role!\n\`\`\`${err}\`\`\``, ephemeral: true });
     });
   });
 }
