@@ -1,4 +1,5 @@
 const Discord = require('discord.js');
+const https = require('https');
 const { getCustomRoleData, setCustomRoleData, getServerSettings, setMessageCache, MessageCache } = require('../databaseManager.js');
 const tempUserStorage = [];
 
@@ -237,6 +238,19 @@ function execute(client, interaction) {
         interaction.reply({ embeds: [
           quickEmbed("Woah, slow down!", "You already sent a role request requiring review in the past 15 minutes.\nPlease try again later!")
         ], ephemeral: true });
+        return;
+      }
+      // check if icon (variable is a image url, find IMAGE size) is more than 2048 kilobytes
+      let downloadedIcon;
+      setTimeout(() => {
+        https.get(icon, res => {
+          if (res.statusCode !== 200) return;
+          res.pipe((data) => { downloadedIcon += data; });
+        });
+      }, 10000);
+      if (icon && !(!downloadedIcon || downloadedIcon.length > 2048000)) {
+        // runs if icon is too large
+        interaction.reply({ embeds: [quickEmbed("Invalid Icon", "Please use a valid role icon that is under 2048 kilobytes in size!", Discord.Colors.Red)], ephemeral: true });
         return;
       }
       // send review embed to review channel
