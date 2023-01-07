@@ -1,7 +1,6 @@
 const Discord = require('discord.js');
 const probe = require('probe-image-size');
 const { getCustomRoleData, setCustomRoleData, getServerSettings, setMessageCache, MessageCache, usedIds } = require('../databaseManager.js');
-const tempUserStorage = [];
 
 const CHECKS = {
   ALPHANUMERIC: 'Your role name must only contain alphanumeric characters (0-9, A-Z, a-z, and spaces).',
@@ -83,7 +82,9 @@ function createReviewMessage(interaction, roleName, roleColor, roleIcon) {
     // make sure review channel exists
     const reviewChannel = interaction.guild.channels.cache.get(serverSettings.approvalChannel);
     if (!reviewChannel) return interaction.channel.send({
-      content: `Hey, <@${interaction.user.id}>! You were flagged for review, but the server has no channel!\nPlease inform a staff member ASAP!`,
+      embeds: [
+        quickEmbed("Error", `You were flagged for review, but this server has no review channel!\nPlease inform a staff member ASAP!`, Discord.Colors.Red)
+      ],
       ephemeral: true
     });
     // send review message with embed and buttons
@@ -108,7 +109,7 @@ function createReviewMessage(interaction, roleName, roleColor, roleIcon) {
       usedIds.push(interaction.guildId + "-" +  interaction.user.id);
     }).catch(err => {
       interaction.channel.send({
-        content: `Hey, <@${interaction.user.id}>! An error occurred while sending your role for review. Please try again later.\n\`\`\`${err}\`\`\``,
+        embeds: quickEmbed("Error", `An error occurred while sending your role for review. Please try again later.\n\`\`\`${err}\`\`\``, Discord.Colors.Red),
         ephemeral: true
       }).then(() => {}).catch((err) => {
         console.log(`Error sending error message to ${interaction.user.id}:\n${err}`);
@@ -131,12 +132,18 @@ function execute(client, interaction) {
   let color = interaction.options.getString('color');
   let icon = interaction.options.getString('icon');
   const submittedIcon = (!icon || icon.toLowerCase() == 'none') ? false : true;
-  if (!interaction.member.premiumSince) return interaction.reply({ content: 'You must be a server booster to use this command!', ephemeral: true });
-  if (usedIds.includes(interaction.guildId + "-" + interaction.user.id)) return interaction.reply({ content: 'You are already waiting for a review!', ephemeral: true });
+  if (!interaction.member.premiumSince) return interaction.reply({ embeds: [
+    quickEmbed("Access Denied", 'You must be a server booster to use this command!', Discord.Colors.Red)
+  ], ephemeral: true });
+  if (usedIds.includes(interaction.guildId + "-" + interaction.user.id)) return interaction.reply({ embeds: [
+    quickEmbed("Woah there, slow down!", "You're already waiting for a review!", Discord.Colors.Red)
+  ], ephemeral: true });
   getCustomRoleData(interaction.guildId, interaction.user.id).then(customRole => {
     // runs if custom role exists
     const role = interaction.guild.roles.cache.get(customRole.id);
-    if (!name && !color && !icon) return interaction.reply({ content: `Your custom role: <@&${role.id}>`, ephemeral: true });
+    if (!name && !color && !icon) return interaction.reply({ embeds: [
+      quickEmbed("Role Information", `Your personal role is <@&${role.id}>.`, role.hexColor).setImage(customRole.icon)
+    ], ephemeral: true });
     if (!name) name = role.name ?? "new role";
     if (!color) color = role.hexColor ?? "#000000";
     if (!icon) {
@@ -150,62 +157,14 @@ function execute(client, interaction) {
     passesChecks(interaction.guildId, name, submittedName, submittedIcon).then(checks => {
       if (checks.length < 1) {
         // edit custom role data- no checks necessary
-        setCustomRoleData(client, {name, color, icon}, interaction.guildId, interaction.user.id).then(() => {
-          interaction.reply({ content: 'Custom role updated!', ephemeral: true });
+        setCustomRoleData(client, {name, color, icon}, interaction.guildId, interaction.user.id).then((role) => {
+          interaction.reply({ embeds: [
+            quickEmbed("Success", `Your custom role, <@&${role.id}>, has been updated!`, Discord.Colors.Green)
+          ], ephemeral: true });
         }).catch((err) => {
-          interaction.reply({ content: 'An error occurred while updating your custom role!', ephemeral: true });
-        });
-        return;
-      }
-      // runs if role doesn't pass every check
-      if (checks.includes(CHECKS.ALPHANUMERIC)) {
-        // runs when role name is not alphanumeric
-        interaction.reply({ embeds: [quickEmbed("Invalid Name", CHECKS.ALPHANUMERIC, Discord.Colors.Red)], ephemeral: true });
-        return;
-      }
-      if (checks.includes(CHECKS.UNSUPPORTED_NAME)) {
-        // runs when role name is not supported
-        interaction.reply({ embeds: [quickEmbed("Invalid Name", CHECKS.UNSUPPORTED_NAME, Discord.Colors.Red)], ephemeral: true });
-        return;
-      }
-      if (checks.includes(CHECKS.UNSUPPORTED_ICON)) {
-        // runs when role icon is not supported
-        interaction.reply({ embeds: [quickEmbed("Invalid Icon", CHECKS.UNSUPPORTED_ICON, Discord.Colors.Red)], ephemeral: true });
-        return;
-      }
-      // skips if user is already in temp storage
-      if (tempUserStorage.includes(interaction.user.id)) {
-        interaction.reply({ embeds: [
-          quickEmbed("Woah, slow down!", "You already sent a role request requiring review in the past 15 minutes.\nPlease try again later!")
-        ], ephemeral: true });
-        return;
-      }
-      // send review embed to review channel
-      createReviewMessage(interaction, name, color, icon);
-      // runs if role needs to be reviewed
-      interaction.reply({ embeds: [
-        quickEmbed("Review", "Your updated role is being reviewed.\nPlease be patient while a moderator checks your role!", Discord.Colors.Yellow)
-      ], ephemeral: true }).catch(err => {
-        if (interaction.replied) return;
-        interaction.reply({ content: "Your updated role is being reviewed.\nPlease be patient while a moderator checks your role!", ephemeral: true });  
-      });
-    }).catch(err => {
-      console.error(err);
-    });
-  }).catch(() => {
-    // runs if custom role doesn't exist
-    // check that options are valid and accounted for
-    if (!name) return interaction.reply({ content: 'You must provide a name for your role!', ephemeral: true });
-    if (!/^#[0-9A-Fa-f]{6}$/i.test(color)) return interaction.reply({ content: 'Invalid color!', ephemeral: true });
-    if (!icon || icon.toLowerCase() == 'none') icon = "";
-    // check if role passes checks
-    passesChecks(interaction.guildId, name, submittedName, submittedIcon).then(checks => {
-      if (checks.length < 1) {
-        // set custom role data- no checks necessary
-        setCustomRoleData(client, {name, color, icon}, interaction.guildId, interaction.user.id).then(() => {
-          interaction.reply({ content: 'Custom role created!', ephemeral: true });
-        }).catch(() => {
-          interaction.reply({ content: 'An error occurred while creating your custom role!', ephemeral: true });
+          interaction.reply({ embeds: [
+            quickEmbed("Error", `An error occurred while updating your role. Please try again later.\n\`\`\`${err}\`\`\``, Discord.Colors.Red)
+          ], ephemeral: true });
         });
         return;
       }
@@ -235,11 +194,73 @@ function execute(client, interaction) {
         interaction.reply({ embeds: [quickEmbed("Invalid Icon", CHECKS.UNSUPPORTED_ICON, Discord.Colors.Red)], ephemeral: true });
         return;
       }
-      // skips if user is already in temp storage
-      if (tempUserStorage.includes(interaction.user.id)) {
-        interaction.reply({ embeds: [
-          quickEmbed("Woah, slow down!", "You already sent a role request requiring review in the past 15 minutes.\nPlease try again later!")
-        ], ephemeral: true });
+      // check if icon (variable is a image url, find IMAGE size) is more than 2048 kilobytes
+      let downloadedIcon = probe.sync(icon);
+      if (icon && (downloadedIcon.length > 2048000 || !downloadedIcon)) {
+        // runs if icon is too large
+        interaction.reply({ embeds: [quickEmbed("Invalid Icon", "Please use a valid role icon that is under 2048 kilobytes in size!", Discord.Colors.Red)], ephemeral: true });
+        return;
+      }
+      // send review embed to review channel
+      createReviewMessage(interaction, name, color, icon);
+      // runs if role needs to be reviewed
+      interaction.reply({ embeds: [
+        quickEmbed("Review", "Your updated role is being reviewed.\nPlease be patient while a moderator checks your role!", Discord.Colors.Yellow)
+      ], ephemeral: true }).catch(err => {
+        // if (interaction.replied) return;
+      });
+    }).catch(err => {
+      console.error(err);
+    });
+  }).catch(() => {
+    // runs if custom role doesn't exist
+    // check that options are valid and accounted for
+    if (!name) return interaction.reply({ embeds: [
+      quickEmbed("Invalid Input", "Please provide a valid role name!", Discord.Colors.Red)
+    ], ephemeral: true });
+    if (!/^#[0-9A-Fa-f]{6}$/i.test(color)) return interaction.reply({ embeds: [
+      quickEmbed("Invalid Input", "Please provide a valid hexadecimal role color!\nFor example, ``#00CCFF``.", Discord.Colors.Red)
+    ], ephemeral: true });
+    if (!icon || icon.toLowerCase() == 'none') icon = "";
+    // check if role passes checks
+    passesChecks(interaction.guildId, name, submittedName, submittedIcon).then(checks => {
+      if (checks.length < 1) {
+        // set custom role data- no checks necessary
+        setCustomRoleData(client, {name, color, icon}, interaction.guildId, interaction.user.id).then((role) => {
+          interaction.reply({ embeds: [
+            quickEmbed("Success", `Your custom role, <@&${role.id}>, has been created!`, Discord.Colors.Green)
+          ], ephemeral: true });
+        }).catch((err) => {
+          interaction.reply({ embeds: [
+            quickEmbed("Error", `An error occurred while creating your role. Please try again later.\n\`\`\`${err}\`\`\``, Discord.Colors.Red)
+          ], ephemeral: true });
+        });
+        return;
+      }
+      // runs if role doesn't pass every check
+      if (checks.includes(CHECKS.NAMES_DISABLED)) {
+        // runs when role names are disabled
+        interaction.reply({ embeds: [quickEmbed("Invalid Input", CHECKS.NAMES_DISABLED, Discord.Colors.Red)], ephemeral: true });
+        return;
+      }
+      if (checks.includes(CHECKS.ICONS_DISABLED)) {
+        // runs when role icons are disabled
+        interaction.reply({ embeds: [quickEmbed("Invalid Input", CHECKS.ICONS_DISABLED, Discord.Colors.Red)], ephemeral: true });
+        return;
+      }
+      if (checks.includes(CHECKS.ALPHANUMERIC)) {
+        // runs when role name is not alphanumeric
+        interaction.reply({ embeds: [quickEmbed("Invalid Name", CHECKS.ALPHANUMERIC, Discord.Colors.Red)], ephemeral: true });
+        return;
+      }
+      if (checks.includes(CHECKS.UNSUPPORTED_NAME)) {
+        // runs when role name is not supported
+        interaction.reply({ embeds: [quickEmbed("Invalid Name", CHECKS.UNSUPPORTED_NAME, Discord.Colors.Red)], ephemeral: true });
+        return;
+      }
+      if (checks.includes(CHECKS.UNSUPPORTED_ICON)) {
+        // runs when role icon is not supported
+        interaction.reply({ embeds: [quickEmbed("Invalid Icon", CHECKS.UNSUPPORTED_ICON, Discord.Colors.Red)], ephemeral: true });
         return;
       }
       // check if icon (variable is a image url, find IMAGE size) is more than 2048 kilobytes
@@ -251,17 +272,14 @@ function execute(client, interaction) {
       }
       // send review embed to review channel
       createReviewMessage(interaction, name, color, icon);
-      // add user to temp storage
-      tempUserStorage.push(interaction.user.id);
       // runs if role needs to be reviewed
       interaction.reply({ embeds: [
-        quickEmbed("Review", "Your new role is being reviewed.\nPlease be patient while a moderator checks your role!", Discord.Colors.Yellow)
+        quickEmbed("Submitted", "Your new role is being reviewed.\nPlease be patient while a moderator checks your role!", Discord.Colors.Yellow)
       ], ephemeral: true }).catch(err => {
-        if (interaction.replied) return;
-        interaction.reply({ content: "Your updated role is being reviewed.\nPlease be patient while a moderator checks your role!", ephemeral: true });
+        // if (interaction.replied) return;
       });
     }).catch(err => {
-      interaction.reply({ content: `An error occurred while checking your role!\n\`\`\`${err}\`\`\``, ephemeral: true });
+      interaction.reply({ embeds: [quickEmbed("Error", "An error occured while checking your role!", Discord.Colors.Red)], ephemeral: true });
     });
   });
 }

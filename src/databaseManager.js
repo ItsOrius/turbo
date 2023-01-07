@@ -235,7 +235,7 @@ function getCustomRoleData(guildId, userId) {
  * @param {object} customRole 
  * @param {string} guildId 
  * @param {string} userId 
- * @returns {Promise<void>}
+ * @returns {Promise<Discord.Role>}
  */
 function setCustomRoleData(client, customRole, guildId, userId) {
   const guild = client.guilds.cache.get(guildId);
@@ -271,7 +271,7 @@ function setCustomRoleData(client, customRole, guildId, userId) {
                 console.log("Couldn't set role icon while updating role: " + err);
               }
             }
-            return resolve();
+            return resolve(guildRole);
           }).catch(reject);
         } else {
           createBoosterRole(guild, customRole.name, customRole.color, customRole.icon, guild.members.cache.get(userId)).then(newRole => {
@@ -279,7 +279,7 @@ function setCustomRoleData(client, customRole, guildId, userId) {
               key: getKey(guildId, userId),
               id: newRole.id
             }).then(() => {
-              return resolve();
+              return resolve(newRole);
             }).catch(reject);
           }).catch(reject);
         }
@@ -289,7 +289,7 @@ function setCustomRoleData(client, customRole, guildId, userId) {
             key: getKey(guildId, userId),
             id: newRole.id
           }).then(() => {
-            return resolve();
+            return resolve(newRole);
           }).catch(reject);
         }).catch(reject);
       });
