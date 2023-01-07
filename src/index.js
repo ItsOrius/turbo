@@ -90,7 +90,7 @@ client.on('interactionCreate', async interaction => {
               }, 5000);
               break;
           }
-          if (usedIds.includes(userId)) {
+          if (usedIds.includes(message.guildId + "-" + userId)) {
             usedIds.splice(usedIds.indexOf(userId), 1);
           }
           break;

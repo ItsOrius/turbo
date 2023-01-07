@@ -132,7 +132,7 @@ function execute(client, interaction) {
   let icon = interaction.options.getString('icon');
   const submittedIcon = (!icon || icon.toLowerCase() == 'none') ? false : true;
   if (!interaction.member.premiumSince) return interaction.reply({ content: 'You must be a server booster to use this command!', ephemeral: true });
-  if (usedIds.includes(interaction.user.id)) return interaction.reply({ content: 'You are already waiting for a review!', ephemeral: true });
+  if (usedIds.includes(interaction.guildId + "-" + interaction.user.id)) return interaction.reply({ content: 'You are already waiting for a review!', ephemeral: true });
   getCustomRoleData(interaction.guildId, interaction.user.id).then(customRole => {
     // runs if custom role exists
     const role = interaction.guild.roles.cache.get(customRole.id);
