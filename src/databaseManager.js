@@ -2,6 +2,8 @@ const Discord = require('discord.js');
 const { Sequelize } = require('sequelize');
 const { iconBoostRequirement } = require('./config.json');
 
+const usedIds = [];
+
 const sequelize = new Sequelize({
   host: 'localhost',
   dialect: 'sqlite',
@@ -397,6 +399,7 @@ module.exports = {
   Roles, 
   ServerSettings, 
   sequelize, 
+  usedIds,
   ServerOptions, 
   MessageCache,
   getKey,

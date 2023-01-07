@@ -4,7 +4,7 @@ require('dotenv').config();
 const Discord = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-const { setCustomRoleData } = require("./databaseManager.js")
+const { setCustomRoleData, usedIds } = require("./databaseManager.js")
 
 
 
@@ -90,6 +90,10 @@ client.on('interactionCreate', async interaction => {
               }, 5000);
               break;
           }
+          if (usedIds.includes(userId)) {
+            usedIds.splice(usedIds.indexOf(userId), 1);
+          }
+          break;
       }
     }).catch(async (err) => { interaction.reply({ content: `There was an error while executing this command!\n\`\`\`${err}\`\`\``, ephemeral: true }) });
   }

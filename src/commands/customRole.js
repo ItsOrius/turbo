@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const probe = require('probe-image-size');
-const { getCustomRoleData, setCustomRoleData, getServerSettings, setMessageCache, MessageCache } = require('../databaseManager.js');
+const { getCustomRoleData, setCustomRoleData, getServerSettings, setMessageCache, MessageCache, usedIds } = require('../databaseManager.js');
 const tempUserStorage = [];
 
 const CHECKS = {
@@ -105,6 +105,7 @@ function createReviewMessage(interaction, roleName, roleColor, roleIcon) {
         roleName, roleColor, roleIcon, userId: interaction.user.id
       }
       setMessageCache(new MessageCache(message.id, 0, JSON.stringify(json))).then(() => {}).catch(console.error);
+      usedIds.push(interaction.user.id);
     }).catch(err => {
       interaction.channel.send({
         content: `Hey, <@${interaction.user.id}>! An error occurred while sending your role for review. Please try again later.\n\`\`\`${err}\`\`\``,
@@ -131,6 +132,7 @@ function execute(client, interaction) {
   let icon = interaction.options.getString('icon');
   const submittedIcon = (!icon || icon.toLowerCase() == 'none') ? false : true;
   if (!interaction.member.premiumSince) return interaction.reply({ content: 'You must be a server booster to use this command!', ephemeral: true });
+  if (usedIds.includes(interaction.user.id)) return interaction.reply({ content: 'You are already waiting for a review!', ephemeral: true });
   getCustomRoleData(interaction.guildId, interaction.user.id).then(customRole => {
     // runs if custom role exists
     const role = interaction.guild.roles.cache.get(customRole.id);
