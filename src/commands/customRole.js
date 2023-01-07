@@ -105,7 +105,7 @@ function createReviewMessage(interaction, roleName, roleColor, roleIcon) {
         roleName, roleColor, roleIcon, userId: interaction.user.id
       }
       setMessageCache(new MessageCache(message.id, 0, JSON.stringify(json))).then(() => {}).catch(console.error);
-      usedIds.push(interaction.user.id);
+      usedIds.push(interaction.guildId + "-" +  interaction.user.id);
     }).catch(err => {
       interaction.channel.send({
         content: `Hey, <@${interaction.user.id}>! An error occurred while sending your role for review. Please try again later.\n\`\`\`${err}\`\`\``,
