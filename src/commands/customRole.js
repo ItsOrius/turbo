@@ -86,7 +86,7 @@ function createReviewMessage(interaction, roleName, roleColor, roleIcon) {
         quickEmbed("Error", `You were flagged for review, but this server has no review channel!\nPlease inform a staff member ASAP!`, Discord.Colors.Red)
       ],
       ephemeral: true
-    });
+    }).catch(() => {});
     // send review message with embed and buttons
     reviewChannel.send({embeds: [embed], components: [
       new Discord.ActionRowBuilder()
@@ -134,16 +134,16 @@ function execute(client, interaction) {
   const submittedIcon = (!icon || icon.toLowerCase() == 'none') ? false : true;
   if (!interaction.member.premiumSince) return interaction.reply({ embeds: [
     quickEmbed("Access Denied", 'You must be a server booster to use this command!', Discord.Colors.Red)
-  ], ephemeral: true });
+  ], ephemeral: true }).catch(() => {});
   if (usedIds.includes(interaction.guildId + "-" + interaction.user.id)) return interaction.reply({ embeds: [
     quickEmbed("Woah there, slow down!", "You're already waiting for a review!", Discord.Colors.Red)
-  ], ephemeral: true });
+  ], ephemeral: true }).catch(() => {});
   getCustomRoleData(interaction.guildId, interaction.user.id).then(customRole => {
     // runs if custom role exists
     const role = interaction.guild.roles.cache.get(customRole.id);
     if (!name && !color && !icon) return interaction.reply({ embeds: [
       quickEmbed("Role Information", `Your personal role is <@&${role.id}>.`, role.hexColor).setImage(customRole.icon)
-    ], ephemeral: true });
+    ], ephemeral: true }).catch(() => {});
     if (!name) name = role.name ?? "new role";
     if (!color) color = role.hexColor ?? "#000000";
     if (!icon) {
@@ -160,45 +160,45 @@ function execute(client, interaction) {
         setCustomRoleData(client, {name, color, icon}, interaction.guildId, interaction.user.id).then((role) => {
           interaction.reply({ embeds: [
             quickEmbed("Success", `Your custom role, <@&${role.id}>, has been updated!`, Discord.Colors.Green)
-          ], ephemeral: true });
+          ], ephemeral: true }).catch(() => {});
         }).catch((err) => {
           interaction.reply({ embeds: [
             quickEmbed("Error", `An error occurred while updating your role. Please try again later.\n\`\`\`${err}\`\`\``, Discord.Colors.Red)
-          ], ephemeral: true });
+          ], ephemeral: true }).catch(() => {});
         });
         return;
       }
       // runs if role doesn't pass every check
       if (checks.includes(CHECKS.NAMES_DISABLED)) {
         // runs when role names are disabled
-        interaction.reply({ embeds: [quickEmbed("Invalid Input", CHECKS.NAMES_DISABLED, Discord.Colors.Red)], ephemeral: true });
+        interaction.reply({ embeds: [quickEmbed("Invalid Input", CHECKS.NAMES_DISABLED, Discord.Colors.Red)], ephemeral: true }).catch(() => {});
         return;
       }
       if (checks.includes(CHECKS.ICONS_DISABLED)) {
         // runs when role icons are disabled
-        interaction.reply({ embeds: [quickEmbed("Invalid Input", CHECKS.ICONS_DISABLED, Discord.Colors.Red)], ephemeral: true });
+        interaction.reply({ embeds: [quickEmbed("Invalid Input", CHECKS.ICONS_DISABLED, Discord.Colors.Red)], ephemeral: true }).catch(() => {});
         return;
       }
       if (checks.includes(CHECKS.ALPHANUMERIC)) {
         // runs when role name is not alphanumeric
-        interaction.reply({ embeds: [quickEmbed("Invalid Name", CHECKS.ALPHANUMERIC, Discord.Colors.Red)], ephemeral: true });
+        interaction.reply({ embeds: [quickEmbed("Invalid Name", CHECKS.ALPHANUMERIC, Discord.Colors.Red)], ephemeral: true }).catch(() => {});
         return;
       }
       if (checks.includes(CHECKS.UNSUPPORTED_NAME)) {
         // runs when role name is not supported
-        interaction.reply({ embeds: [quickEmbed("Invalid Name", CHECKS.UNSUPPORTED_NAME, Discord.Colors.Red)], ephemeral: true });
+        interaction.reply({ embeds: [quickEmbed("Invalid Name", CHECKS.UNSUPPORTED_NAME, Discord.Colors.Red)], ephemeral: true }).catch(() => {});
         return;
       }
       if (checks.includes(CHECKS.UNSUPPORTED_ICON)) {
         // runs when role icon is not supported
-        interaction.reply({ embeds: [quickEmbed("Invalid Icon", CHECKS.UNSUPPORTED_ICON, Discord.Colors.Red)], ephemeral: true });
+        interaction.reply({ embeds: [quickEmbed("Invalid Icon", CHECKS.UNSUPPORTED_ICON, Discord.Colors.Red)], ephemeral: true }).catch(() => {});
         return;
       }
       // check if icon (variable is a image url, find IMAGE size) is more than 2048 kilobytes
       let downloadedIcon = probe.sync(icon);
       if (icon && (downloadedIcon.length > 2048000 || !downloadedIcon)) {
         // runs if icon is too large
-        interaction.reply({ embeds: [quickEmbed("Invalid Icon", "Please use a valid role icon that is under 2048 kilobytes in size!", Discord.Colors.Red)], ephemeral: true });
+        interaction.reply({ embeds: [quickEmbed("Invalid Icon", "Please use a valid role icon that is under 2048 kilobytes in size!", Discord.Colors.Red)], ephemeral: true }).catch(() => {});
         return;
       }
       // send review embed to review channel
@@ -217,10 +217,10 @@ function execute(client, interaction) {
     // check that options are valid and accounted for
     if (!name) return interaction.reply({ embeds: [
       quickEmbed("Invalid Input", "Please provide a valid role name!", Discord.Colors.Red)
-    ], ephemeral: true });
+    ], ephemeral: true }).catch(() => {});
     if (!/^#[0-9A-Fa-f]{6}$/i.test(color)) return interaction.reply({ embeds: [
       quickEmbed("Invalid Input", "Please provide a valid hexadecimal role color!\nFor example, ``#00CCFF``.", Discord.Colors.Red)
-    ], ephemeral: true });
+    ], ephemeral: true }).catch(() => {});
     if (!icon || icon.toLowerCase() == 'none') icon = "";
     // check if role passes checks
     passesChecks(interaction.guildId, name, submittedName, submittedIcon).then(checks => {
@@ -229,45 +229,45 @@ function execute(client, interaction) {
         setCustomRoleData(client, {name, color, icon}, interaction.guildId, interaction.user.id).then((role) => {
           interaction.reply({ embeds: [
             quickEmbed("Success", `Your custom role, <@&${role.id}>, has been created!`, Discord.Colors.Green)
-          ], ephemeral: true });
+          ], ephemeral: true }).catch(() => {});
         }).catch((err) => {
           interaction.reply({ embeds: [
             quickEmbed("Error", `An error occurred while creating your role. Please try again later.\n\`\`\`${err}\`\`\``, Discord.Colors.Red)
-          ], ephemeral: true });
+          ], ephemeral: true }).catch(() => {});
         });
         return;
       }
       // runs if role doesn't pass every check
       if (checks.includes(CHECKS.NAMES_DISABLED)) {
         // runs when role names are disabled
-        interaction.reply({ embeds: [quickEmbed("Invalid Input", CHECKS.NAMES_DISABLED, Discord.Colors.Red)], ephemeral: true });
+        interaction.reply({ embeds: [quickEmbed("Invalid Input", CHECKS.NAMES_DISABLED, Discord.Colors.Red)], ephemeral: true }).catch(() => {});
         return;
       }
       if (checks.includes(CHECKS.ICONS_DISABLED)) {
         // runs when role icons are disabled
-        interaction.reply({ embeds: [quickEmbed("Invalid Input", CHECKS.ICONS_DISABLED, Discord.Colors.Red)], ephemeral: true });
+        interaction.reply({ embeds: [quickEmbed("Invalid Input", CHECKS.ICONS_DISABLED, Discord.Colors.Red)], ephemeral: true }).catch(() => {});
         return;
       }
       if (checks.includes(CHECKS.ALPHANUMERIC)) {
         // runs when role name is not alphanumeric
-        interaction.reply({ embeds: [quickEmbed("Invalid Name", CHECKS.ALPHANUMERIC, Discord.Colors.Red)], ephemeral: true });
+        interaction.reply({ embeds: [quickEmbed("Invalid Name", CHECKS.ALPHANUMERIC, Discord.Colors.Red)], ephemeral: true }).catch(() => {});
         return;
       }
       if (checks.includes(CHECKS.UNSUPPORTED_NAME)) {
         // runs when role name is not supported
-        interaction.reply({ embeds: [quickEmbed("Invalid Name", CHECKS.UNSUPPORTED_NAME, Discord.Colors.Red)], ephemeral: true });
+        interaction.reply({ embeds: [quickEmbed("Invalid Name", CHECKS.UNSUPPORTED_NAME, Discord.Colors.Red)], ephemeral: true }).catch(() => {});
         return;
       }
       if (checks.includes(CHECKS.UNSUPPORTED_ICON)) {
         // runs when role icon is not supported
-        interaction.reply({ embeds: [quickEmbed("Invalid Icon", CHECKS.UNSUPPORTED_ICON, Discord.Colors.Red)], ephemeral: true });
+        interaction.reply({ embeds: [quickEmbed("Invalid Icon", CHECKS.UNSUPPORTED_ICON, Discord.Colors.Red)], ephemeral: true }).catch(() => {});
         return;
       }
       // check if icon (variable is a image url, find IMAGE size) is more than 2048 kilobytes
       let downloadedIcon = probe.sync(icon);
       if (icon && (downloadedIcon.length > 2048000 || !downloadedIcon)) {
         // runs if icon is too large
-        interaction.reply({ embeds: [quickEmbed("Invalid Icon", "Please use a valid role icon that is under 2048 kilobytes in size!", Discord.Colors.Red)], ephemeral: true });
+        interaction.reply({ embeds: [quickEmbed("Invalid Icon", "Please use a valid role icon that is under 2048 kilobytes in size!", Discord.Colors.Red)], ephemeral: true }).catch(() => {});
         return;
       }
       // send review embed to review channel
@@ -279,7 +279,7 @@ function execute(client, interaction) {
         // if (interaction.replied) return;
       });
     }).catch(err => {
-      interaction.reply({ embeds: [quickEmbed("Error", "An error occured while checking your role!", Discord.Colors.Red)], ephemeral: true });
+      interaction.reply({ embeds: [quickEmbed("Error", "An error occured while checking your role!", Discord.Colors.Red)], ephemeral: true }).catch(() => {});
     });
   });
 }
