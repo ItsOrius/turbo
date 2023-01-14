@@ -196,10 +196,12 @@ function execute(client, interaction) {
       }
       // check if icon (variable is a image url, find IMAGE size) is more than 2048 kilobytes
       let downloadedIcon = probe.sync(icon);
-      if (icon && (downloadedIcon.length * downloadedIcon.width > 2048000 || !downloadedIcon)) {
-        // runs if icon is too large
-        interaction.reply({ embeds: [quickEmbed("Invalid Icon", "Please use a valid role icon that is under 2048 kilobytes in size!", Discord.Colors.Red)], ephemeral: true }).catch(console.log);
-        return;
+      if (downloadedIcon) {
+        if (downloadedIcon.width * downloadedIcon.height > 2048000) {
+          // runs if icon is too large
+          interaction.reply({ embeds: [quickEmbed("Invalid Icon", "Please use a valid role icon that is under 2048 kilobytes in size!", Discord.Colors.Red)], ephemeral: true }).catch(console.log);
+          return;
+        }
       }
       // send review embed to review channel
       createReviewMessage(interaction, name, color, icon);
