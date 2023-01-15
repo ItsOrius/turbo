@@ -14,22 +14,22 @@ function execute(client, oldMember, newMember) {
     getCustomRoleData(newMember.guild.id, newMember.id).then(customRole => {
       if (customRole.id) {
         newMember.guild.roles.fetch(customRole.id).then(role => {
-          role.delete();
-        });
+          role.delete().catch(console.log);
+        }).catch(console.log);
       }
-    });
+    }).catch(console.log);
   } else if (!oldDate && newDate) {
     // user gained boost
     getCustomRoleData(newMember.guild.id, newMember.id).then(customRole => {
       // find role by id
       newMember.guild.roles.fetch(customRole.id).then(role => {
         // update role
-        role.edit({ name: customRole.name, color: customRole.color, icon: customRole.icon });
+        role.edit({ name: customRole.name, color: customRole.color, icon: customRole.icon }).catch(console.log);
       }).catch(() => {
         // role not found, create role
-        setCustomRoleData(client, customRole, newMember.guild.id, newMember.id);
+        setCustomRoleData(client, customRole, newMember.guild.id, newMember.id).catch(console.log);
       });
-    });
+    }).catch(console.log);
   }
 }
 

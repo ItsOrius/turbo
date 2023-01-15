@@ -18,15 +18,15 @@ async function execute(client, interaction) {
   const inclusive = interaction.options.getBoolean('inclusive');
   const guild = interaction.guild;
   if (!interaction.memberPermissions.has(Discord.PermissionFlagsBits.Administrator) && !interaction.memberPermissions.has(Discord.PermissionFlagsBits.ManageRoles)) {
-    await interaction.reply({ content: "You do not have permission to use this command!", ephemeral: true });
+    await interaction.reply({ content: "You do not have permission to use this command!", ephemeral: true }).catch(console.log);
     return;
   }
   if (start_role.position < end_role.position) {
-    await interaction.reply({ content: "The start role must be higher than the end role!", ephemeral: true });
+    await interaction.reply({ content: "The start role must be higher than the end role!", ephemeral: true }).catch(console.log);
     return;
   }
   // fetch every member of the guild
-  await guild.members.fetch();
+  await guild.members.fetch().catch(console.log);
   // get array of every role between the start and end roles, unless inclusive is true
   const max = inclusive ? start_role.position + 1 : start_role.position
   const min = inclusive ? end_role.position - 1 : end_role.position;
@@ -34,15 +34,15 @@ async function execute(client, interaction) {
     return role.position < max && role.position > min;
   });
   if (!collection) {
-    await interaction.reply({ content: "There are no roles between the start and end roles!", ephemeral: true });
+    await interaction.reply({ content: "There are no roles between the start and end roles!", ephemeral: true }).catch(console.log);
     return;
   }
   if (collection.size === 0) {
-    await interaction.reply({ content: "There are no roles between the start and end roles!", ephemeral: true });
+    await interaction.reply({ content: "There are no roles between the start and end roles!", ephemeral: true }).catch(console.log);
     return;
   }
   // send "please wait" message and then edit it when done
-  await interaction.reply({ content: `Beginning transfer of ${collection.size} roles... this may take a while!`, ephemeral: true });
+  await interaction.reply({ content: `Beginning transfer of ${collection.size} roles... this may take a while!`, ephemeral: true }).catch(console.log);
   console.log(`Beginning transfer of ${collection.size} roles for ${guild.name} (${guild.id})...`);
   let count = 0;
   let failedCount = 0;
@@ -52,7 +52,7 @@ async function execute(client, interaction) {
       failedCount++;
       console.log(`Skipping role ${role.name} (${role.id}) for ${guild.name} (${guild.id}) because it has no members!\nCurrent count: ${count + failedCount}/${collection.size}`);
       if (count + failedCount >= collection.size) {
-        await interaction.editReply({ content: `Successfully transfered ${count} booster roles with ${failedCount} empty roles.` });
+        await interaction.editReply({ content: `Successfully transfered ${count} booster roles with ${failedCount} empty roles.` }).catch(console.log);
       }
       return;
     }
@@ -68,10 +68,10 @@ async function execute(client, interaction) {
           `Transferring role ${role.name} (${role.id}) for ${guild.name} (${guild.id}) and user with ID of ${member.id}...\nCurrent count: ${count + failedCount}/${collection.size}`
         );
         if (count + failedCount >= collection.size) {
-          await interaction.editReply({ content: `Successfully transfered ${count} booster roles with ${failedCount} empty roles.` });
+          await interaction.editReply({ content: `Successfully transfered ${count} booster roles with ${failedCount} empty roles.` }).catch(console.log);
         }
-      });
-    });
+      }).catch(console.log);
+    }).catch(console.log);
   });
 }
 
