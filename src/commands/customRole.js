@@ -154,7 +154,7 @@ function execute(client, interaction) {
       role.edit({ icon: null });
     };
     // check if role passes checks
-    passesChecks(interaction.guildId, name, submittedName, submittedIcon).then(checks => {
+    passesChecks(interaction.guildId, name, submittedName, submittedIcon).then(async checks => {
       if (checks.length < 1) {
         // edit custom role data- no checks necessary
         setCustomRoleData(client, {name, color, icon}, interaction.guildId, interaction.user.id).then((role) => {
@@ -195,12 +195,14 @@ function execute(client, interaction) {
         return;
       }
       // check if icon (variable is a image url, find IMAGE size) is more than 2048 kilobytes
-      let downloadedIcon = probe.sync(icon);
-      if (downloadedIcon) {
-        if (downloadedIcon.length > 2048000) {
-          // runs if icon is too large
-          interaction.reply({ embeds: [quickEmbed("Invalid Icon", "Please use a valid role icon that is under 2048 kilobytes in size!", Discord.Colors.Red)], ephemeral: true }).catch(console.log);
-          return;
+      if (icon) {
+        let downloadedIcon = await probe(icon);
+        if (downloadedIcon) {
+          if (downloadedIcon.length > 2048000 || !downloadedIcon) {
+            // runs if icon is too large
+            interaction.reply({ embeds: [quickEmbed("Invalid Icon", "Please use a valid role icon that is under 2048 kilobytes in size!", Discord.Colors.Red)], ephemeral: true }).catch(console.log);
+            return;
+          }
         }
       }
       // send review embed to review channel
@@ -225,7 +227,7 @@ function execute(client, interaction) {
     ], ephemeral: true }).catch(console.log);
     if (!icon || icon.toLowerCase() == 'none') icon = "";
     // check if role passes checks
-    passesChecks(interaction.guildId, name, submittedName, submittedIcon).then(checks => {
+    passesChecks(interaction.guildId, name, submittedName, submittedIcon).then(async checks => {
       if (checks.length < 1) {
         // set custom role data- no checks necessary
         setCustomRoleData(client, {name, color, icon}, interaction.guildId, interaction.user.id).then((role) => {
@@ -267,11 +269,13 @@ function execute(client, interaction) {
       }
       // check if icon (variable is a image url, find IMAGE size) is more than 2048 kilobytes
       if (icon) {
-        let downloadedIcon = probe.sync(icon);
-        if (downloadedIcon.length > 2048000 || !downloadedIcon) {
-          // runs if icon is too large
-          interaction.reply({ embeds: [quickEmbed("Invalid Icon", "Please use a valid role icon that is under 2048 kilobytes in size!", Discord.Colors.Red)], ephemeral: true }).catch(console.log);
-          return;
+        let downloadedIcon = await probe(icon);
+        if (downloadedIcon) {
+          if (downloadedIcon.length > 2048000 || !downloadedIcon) {
+            // runs if icon is too large
+            interaction.reply({ embeds: [quickEmbed("Invalid Icon", "Please use a valid role icon that is under 2048 kilobytes in size!", Discord.Colors.Red)], ephemeral: true }).catch(console.log);
+            return;
+          }
         }
       }
       // send review embed to review channel
