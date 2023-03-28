@@ -356,7 +356,7 @@ function setServerSettings(guildId, settings) {
     }).then(() => {
       return resolve();
     }).catch((err) => {
-      return reject();
+      return reject(err);
     });
   });
 }
