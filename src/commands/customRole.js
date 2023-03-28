@@ -281,7 +281,7 @@ function execute(client, interaction) {
         // if (interaction.replied) return;
       });
     }).catch(err => {
-      interaction.reply({ embeds: [quickEmbed("Error", "An error occured while checking your role!", Discord.Colors.Red)], ephemeral: true }).catch(console.log);
+      interaction.reply({ embeds: [quickEmbed("Error", "An error occured while checking your role!\n```" + err + "```", Discord.Colors.Red)], ephemeral: true }).catch(console.log);
     });
   });
 }
