@@ -28,8 +28,7 @@ client.on('ready', async () => {
   MessageCaches.sync();
   Roles.sync();
   ServerSettings.sync();
-  await client.guilds.cache.fetch(); // update the chache for accurate info.
-  let serverCount = client.guilds.cache.size;
+  let serverCount = (await client.guilds.fetch()).size;
   console.log(`Currently serving ${serverCount} servers!`);
 });
 
