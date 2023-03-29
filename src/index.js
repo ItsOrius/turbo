@@ -20,7 +20,7 @@ const { CustomRoles, MessageCaches, Roles, ServerSettings, sequelize } = require
 
 
 /* event listeners */
-client.on('ready', () => {
+client.on('ready', async () => {
   console.log(`Logged in as ${client.user.tag}!`);
   client.user.setActivity({ name: "with /customrole!", type: Discord.ActivityType.Playing })
   sequelize.sync();
@@ -28,6 +28,9 @@ client.on('ready', () => {
   MessageCaches.sync();
   Roles.sync();
   ServerSettings.sync();
+  await client.guilds.cache.fetch(); // update the chache for accurate info.
+  let serverCount = client.guilds.cache.size;
+  console.log(`Currently serving ${serverCount} servers!`);
 });
 
 fs.readdirSync(path.join(__dirname, "./events")).forEach(file => {
