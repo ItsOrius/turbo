@@ -9,7 +9,7 @@
   "author": "Orius",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^14.7.1",
+    "discord.js": "^14.9.0",
     "dotenv": "^16.0.3",
     "probe-image-size": "^7.2.3",
     "sequelize": "^6.28.0",
