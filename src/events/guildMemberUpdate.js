@@ -14,7 +14,9 @@ function execute(client, oldMember, newMember) {
     getCustomRoleData(newMember.guild.id, newMember.id).then(customRole => {
       if (customRole.id) {
         newMember.guild.roles.fetch(customRole.id).then(role => {
-          role.delete().catch(console.log);
+          if (role) {
+            role.delete().catch(console.log);
+          }
         }).catch(console.log);
       }
     }).catch(console.log);
