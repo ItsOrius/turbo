@@ -60,12 +60,29 @@ client.on('interactionCreate', async interaction => {
   }
   // button handler
   if (interaction.isButton()) {
+    if (interaction.customId.startsWith('delete-')) {
+      const messageId = interaction.customId.split('-')[1];
+      // delete the message with id messageId
+      const message = await interaction.channel.messages.fetch(messageId);
+      if (message) {
+        await message.delete();
+      }
+      return;
+    }
     const message = await interaction.message.fetch();
     await MessageCaches.findOne({ where: { key: message.id } }).then(res => {
       if (res) {
         return res;
       }
-      interaction.reply({ content: "No matching request in our database!\nWe're sorry for the inconvenience, you may delete the request message.", ephemeral: true });
+      interaction.reply({
+        content: "No matching request in our database!\nWe're sorry for the inconvenience, you may delete the request message.",
+        ephemeral: true,
+        components: [
+          new Discord.ActionRowBuilder().addComponents(
+            new Discord.ButtonBuilder().setCustomId(`delete-${interaction.message.id}`).setLabel('Delete').setStyle('DANGER')
+          )
+        ]
+      });
       return null;
     }).then(async data => {
       if (!data) return;
